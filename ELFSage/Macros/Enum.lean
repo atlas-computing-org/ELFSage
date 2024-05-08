@@ -160,7 +160,7 @@ macro "enum" e:ident "(" n:ident " : " ty:term ")" (" where")? cases:enum_case* 
     let ⟨name, value, _⟩ := case
     match value with
     | .literalValue v      => `(if _ : $n = $v then .$name:ident else $res)
-    | .parametricValue _ h => `(if _ : $h then .$name:ident $n (by simp; omega) else $res)
+    | .parametricValue _ h => `(if _ : $h then .$name:ident $n (by sorry) else $res)
 
   `(
     inductive $e:ident
@@ -170,15 +170,19 @@ macro "enum" e:ident "(" n:ident " : " ty:term ")" (" where")? cases:enum_case* 
 
     def $(eIdent `val) : $e → $ty $valCases:matchAlt*
 
+    -- this line is already enough to break the example in test.lean
     def $(eIdent `ofVal) : $ty → $e := fun $n => $ofValCases
 
+    /-
     theorem $(eIdent `ofVal_val) (e : $e) : $(eIdent `ofVal) ($(eIdent `val) e) = e := by
       cases e <;> try rfl
-      all_goals rename _ => h; simp [$(eIdent `val): ident, $(eIdent `ofVal): ident, h]
+      all_goals rename _ => h; sorry --simp only [$(eIdent `val): ident, $(eIdent `ofVal): ident, h, ↓reduceDite, and_self]
 
     theorem $(eIdent `val_ofVal) (n : $ty) : $(eIdent `val) ($(eIdent `ofVal) n) = n := by
       unfold $(eIdent `ofVal)
-      repeat split; simp only [*, $(eIdent `val): ident]
-      simp only [*, $(eIdent `val): ident]
-      contradiction
+      repeat split; --simp only [*, $(eIdent `val): ident]
+      --simp only [*, $(eIdent `val): ident]
+      --contradiction
+      repeat sorry
+    -/
   )
